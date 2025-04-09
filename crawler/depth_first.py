@@ -32,6 +32,7 @@ class DepthFirstCrawl:
             threshold_type="dynamic"
         )
         markdown_generator = DefaultMarkdownGenerator(content_filter=prune_filter)
+        #options={ "ignore_links": True, "skip_internal_links":True}- add if you feel it is required 
         return prune_filter, markdown_generator
 
     def build_crawler_config(self, depth: int, markdown_generator):
