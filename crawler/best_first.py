@@ -89,7 +89,7 @@ class BestFirstCrawl:
     async def crawl_single_page(self, url: str):
         try:
             rendered_html = await self.fetch_rendered_html(url)
-            _, markdown_generator = self.prunning()
+            _, markdown_generator = self.prunning_filter()
             config = self.build_crawler_config( depth=0, markdown_generator=markdown_generator)
 
             async with AsyncWebCrawler() as crawler:
@@ -103,7 +103,7 @@ class BestFirstCrawl:
     async def best_first_crawl(self, url: str, depth: int):
         try:
             rendered_html = await self.fetch_rendered_html(url)
-            _, markdown_generator = self.prunning()
+            _, markdown_generator = self.prunning_filter()
             config = self.build_crawler_config(depth=depth, markdown_generator=markdown_generator)
 
             async with AsyncWebCrawler() as crawler:
