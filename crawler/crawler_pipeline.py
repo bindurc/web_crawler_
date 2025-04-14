@@ -2,15 +2,16 @@ import os
 import asyncio
 import datetime
 from typing import Optional,List
-from fastapi import  APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException
 from docx import Document
 from pydantic import BaseModel, HttpUrl, Field
 from dotenv import load_dotenv
-from best_first import BestFirstCrawl
+from breath_first import BreathFirstCrawl
 from depth_first import DepthFirstCrawl
 
 
 load_dotenv()
+
 
 router = APIRouter()
 
@@ -31,11 +32,10 @@ def save_results_to_docx(strategy,method,results: list[dict]) -> str:
 
     doc = Document()
     doc.add_heading("Crawled Content", level=1)
+    
 
     for i, item in enumerate(results, start=1):
         doc.add_heading(f"{i}. {item['url']}", level=2)
-        # text_splitter = RecursiveCharacterTextSplitter(chunk_size=5000, chunk_overlap=1000, separators=["\n\n", "\n", " ", "","."])
-        # chunks = text_splitter.split_text(item["text"])
         doc.add_paragraph(item["text"])
 
     print(f"Saving DOCX to: {file_path}")
@@ -53,19 +53,18 @@ def start_crawling(request: CrawlRequest):
         strategy = request.strategy
         depth = request.depth
         results = []
-        if strategy == "best first":
+        if strategy == "breath first":
 
             if method == "single":
 
-                crawl_single_page_service = BestFirstCrawl()
+                crawl_single_page_service = BreathFirstCrawl()
                 crawl_single_page = crawl_single_page_service.crawl_single_page(url)
                 results = loop.run_until_complete(crawl_single_page)
                
             elif method == "recursive":
 
-                # Use the best-first crawling strategy
-                best_first_crawl_service = BestFirstCrawl()
-                best_first_crawl = best_first_crawl_service.best_first_crawl(url,depth)
+                best_first_crawl_service = BreathFirstCrawl()
+                best_first_crawl = best_first_crawl_service.breath_first_crawl(url,depth)
                 results = loop.run_until_complete(best_first_crawl)
 
                 
