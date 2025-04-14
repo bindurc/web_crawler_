@@ -1,4 +1,3 @@
-import os
 from dotenv import load_dotenv
 from playwright.async_api import async_playwright
 from crawl4ai import (
@@ -6,7 +5,6 @@ from crawl4ai import (
     CrawlerRunConfig,
     CacheMode
 )
-from crawl4ai.deep_crawling.scorers import KeywordRelevanceScorer
 from crawl4ai.content_scraping_strategy import LXMLWebScrapingStrategy
 from crawl4ai.deep_crawling import DFSDeepCrawlStrategy
 from crawl4ai.markdown_generation_strategy import DefaultMarkdownGenerator
@@ -20,7 +18,7 @@ load_dotenv()
 class DepthFirstCrawl:
 
     def __init__(self, keywords=None):
-        self.keywords = keywords or ["crawl", "example", "async", "configuration"]
+        self.keywords = keywords or []
         self.user_agent = (
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
             "(KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"
@@ -32,21 +30,16 @@ class DepthFirstCrawl:
             threshold_type="dynamic"
         )
         markdown_generator = DefaultMarkdownGenerator(content_filter=prune_filter)
-        #options={ "ignore_links": True, "skip_internal_links":True}- add if you feel it is required 
+        #options={ "ignore_links": True, "skip_internal_links":True}- add if you feel it is required           
         return prune_filter, markdown_generator
 
     def build_crawler_config(self, depth: int, markdown_generator):
         max_pages = {1: 5, 2: 200}.get(depth, 500)
-        keyword_scorer = KeywordRelevanceScorer(
-            keywords=self.keywords,
-            weight=0.7
-        )
         return CrawlerRunConfig(
             deep_crawl_strategy=DFSDeepCrawlStrategy(
                 max_depth=depth,
                 include_external=False,
-                max_pages=max_pages,
-                url_scorer=keyword_scorer
+                max_pages=max_pages
             ),
             markdown_generator=markdown_generator,
             scraping_strategy=LXMLWebScrapingStrategy(),
@@ -66,16 +59,7 @@ class DepthFirstCrawl:
         try:
             async with async_playwright() as p:
                 browser = await p.chromium.launch(headless=True)
-                context = await browser.new_context(
-                    ignore_https_errors=True,
-                    user_agent=self.user_agent,
-                    locale="en-US",
-                    timezone_id="America/New_York",
-                    viewport={"width": 1280, "height": 800},
-                    color_scheme="light",
-                    java_script_enabled=True,
-                    permissions=["geolocation"]
-                )
+                context = await browser.new_context()
                 page = await context.new_page()
                 await page.goto(url, wait_until="commit")
                 await page.wait_for_timeout(60)
