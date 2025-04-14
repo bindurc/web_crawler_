@@ -17,12 +17,22 @@ load_dotenv()
 
 class DepthFirstCrawl:
 
-    def __init__(self, keywords=None):
-        self.keywords = keywords or []
-        self.user_agent = (
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-            "(KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"
-        )
+    async def fetch_rendered_html(self, url: str) -> str:
+        try:
+            async with async_playwright() as p:
+                browser = await p.chromium.launch(headless=True)
+                context = await browser.new_context()
+                page = await context.new_page()
+                await page.goto(url, wait_until="commit")
+                await page.wait_for_timeout(60)
+                html = await page.content()
+                await browser.close()
+                return html
+        except Exception as e:
+            logger.exception(f"Unexpected error while rendering {url}")
+            raise
+
+
 
     def prunning_filter(self):
         prune_filter = PruningContentFilter(
@@ -32,6 +42,7 @@ class DepthFirstCrawl:
         markdown_generator = DefaultMarkdownGenerator(content_filter=prune_filter)
         #options={ "ignore_links": True, "skip_internal_links":True}- add if you feel it is required           
         return prune_filter, markdown_generator
+
 
     def build_crawler_config(self, depth: int, markdown_generator):
         max_pages = {1: 5, 2: 200}.get(depth, 500)
@@ -51,24 +62,9 @@ class DepthFirstCrawl:
             wait_for_images=True,
             simulate_user=True,
             adjust_viewport_to_content=True,
-            remove_overlay_elements=True,
-            
+            remove_overlay_elements=True
         )
 
-    async def fetch_rendered_html(self, url: str) -> str:
-        try:
-            async with async_playwright() as p:
-                browser = await p.chromium.launch(headless=True)
-                context = await browser.new_context()
-                page = await context.new_page()
-                await page.goto(url, wait_until="commit")
-                await page.wait_for_timeout(60)
-                html = await page.content()
-                await browser.close()
-                return html
-        except Exception as e:
-            logger.exception(f"Unexpected error while rendering {url}")
-            raise
 
     async def crawl_single_page(self, url: str):
         try:
@@ -83,6 +79,7 @@ class DepthFirstCrawl:
         except Exception as e:
             logger.exception(f"Error during single page crawl of {url}")
             raise
+
 
     async def depth_first_crawl(self, url: str, depth: int):
         try:
