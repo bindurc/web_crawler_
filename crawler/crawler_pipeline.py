@@ -12,7 +12,6 @@ from depth_first import DepthFirstCrawl
 
 load_dotenv()
 
-
 router = APIRouter()
 
 asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
